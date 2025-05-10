@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>플랫폼 노동자 급여 계산기</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4caf50;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+
+        #calculatorForm {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto 30px;
+        }
+
+        label {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            display: block;
+            color: #555;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #results {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        #results h2 {
+            font-size: 1.8rem;
+            color: #333;
+        }
+
+        #totalEarnings, #averageEarnings, #averageSatisfaction, #mainCause {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        #charts {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        canvas {
+            width: 100% !important;
+            max-width: 500px;
+            height: 350px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>플랫폼 노동자 급여 계산기&만족도 기록장</h1>
+        <form id="calculatorForm">
+            <label for="platformType">플랫폼 종류:</label>
+            <select id="platformType">
+                <option value="delivery">배달 플랫폼</option>
+                <option value="ride">승차 공유 플랫폼</option>
+                <option value="freelance">프리랜서 플랫폼</option>
+            </select>
+
+            <label for="orderCount">일한 건수(혹은 일한 시간):</label>
+            <input type="number" id="orderCount" placeholder="숫자로 입력하세요.">
+
+            <label for="deliveryFee">건당 받은 돈(혹은 시간당 임금) (원):</label>
+            <input type="number" id="deliveryFee" placeholder="숫자로 입력하세요.">
+
+            <label for="commission">플랫폼 수수료 (%) :</label>
+            <input type="number" id="commission" placeholder="수수료율을 입력하세요.">
+
+            <label for="otherExpenses">기타 비용 (원):</label>
+            <input type="number" id="otherExpenses" placeholder="기타 비용을 입력하세요.">
+
+            <label for="satisfaction">근무 환경 만족도 (1~10):</label>
+            <input type="number" id="satisfaction" min="1" max="10" placeholder="만족도를 입력하세요.">
+
+            <label for="cause">노동 환경 불만족의 원인:</label>
+            <select id="cause">
+                <option value="딱히 불만 없음">딱히 불만 없음</option>
+                <option value="과도한 업무량">과도한 업무량</option>
+                <option value="차별적 대우 및 부당한 징계">차별적 대우 및 부당한 징계</option>
+                <option value="장시간 근무">장시간 근무</option>
+                <option value="낮은 수익">낮은 수익</option>
+                <option value="불안정한 고용">불안정한 고용</option>
+                <option value="안전하지 않은 작업 환경">안전하지 않은 작업 환경</option>
+                <option value="법적 권리 무시(휴가, 초과근무 수당 등)">법적 권리 무시(휴가, 초과근무 수당 등)</option>
+                <option value="조직의 체계적 억압(노조 결성 방해)">조직의 체계적 억압(노조 결성 방해)</option>
+                <option value="직장 내 괴롭힘">직장 내 괴롭힘</option>
+                <option value="고객의 폭언 혹은 폭행">고객의 폭언 혹은 폭행</option>
+            </select>
+
+            <label for="date">날짜:</label>
+            <input type="date" id="date" required>
+
+            <button type="submit">계산</button>
+            <button type="button" id="resetButton" style="background-color: #f44336; margin-top: 10px;">기록 리셋</button>
+        </form>
+
+        <div id="results">
+            <h2>결과</h2>
+            <p id="totalEarnings"></p>
+            <p id="averageEarnings"></p>
+            <p id="averageSatisfaction"></p>
+            <p id="mainCause"></p>
+        </div>
+
+        <div id="charts">
+            <canvas id="revenueChart"></canvas>
+            <canvas id="satisfactionChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const revenueChartCtx = document.getElementById('revenueChart').getContext('2d');
+        const satisfactionChartCtx = document.getElementById('satisfactionChart').getContext('2d');
+        let revenueChart, satisfactionChart;
+        let dates = [];
+        let revenueData = [];
+        let satisfactionData = [];
+        let causeCounts = {};
+
+        function calculateEarnings() {
+            const platformType = document.getElementById('platformType').value;
+            const orderCount = parseInt(document.getElementById('orderCount').value) || 0;
+            const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+            const commission = parseFloat(document.getElementById('commission').value) || 0;
+            const otherExpenses = parseFloat(document.getElementById('otherExpenses').value) || 0;
+            const satisfaction = parseInt(document.getElementById('satisfaction').value) || 0;
+            const cause = document.getElementById('cause').value;
+            const date = document.getElementById('date').value;
+
+            const totalEarnings = orderCount * deliveryFee - (commission / 100) * (orderCount * deliveryFee) - otherExpenses;
+
+            document.getElementById('totalEarnings').textContent = `오늘의 총 순수익: ${totalEarnings.toFixed(2)} 원`;
+
+            dates.push(date);
+            revenueData.push(totalEarnings);
+            satisfactionData.push(satisfaction);
+            causeCounts[cause] = (causeCounts[cause] || 0) + 1;
+
+            updateCharts();
+            saveUserData();
+            displayAverageMetrics();
+            displayMainCause();
+        }
+
+        function displayMainCause() {
+            const mainCause = Object.entries(causeCounts).reduce((max, entry) => entry[1] > max[1] ? entry : max, ['', 0]);
+            const message = mainCause[0] === '딱히 불만 없음'
+                ? '당신의 노동 환경은 훌륭한가보군요!'
+                : `당신의 노동 환경 불만족의 주된 원인은 ${mainCause[0]}입니다.`;
+
+            document.getElementById('mainCause').textContent = message;
+        }
+
+        function updateCharts() {
+            if (revenueChart) revenueChart.destroy();
+            if (satisfactionChart) satisfactionChart.destroy();
+
+            revenueChart = new Chart(revenueChartCtx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: '수익 (원)',
+                        data: revenueData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                }
+            });
+
+            satisfactionChart = new Chart(satisfactionChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: '근무 환경 만족도',
+                        data: satisfactionData,
+                        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        borderWidth: 1
+                    }]
+                }
+            });
+        }
+
+        function displayAverageMetrics() {
+            const totalRevenue = revenueData.reduce((sum, value) => sum + value, 0);
+            const averageRevenue = totalRevenue / revenueData.length || 0;
+            const totalSatisfaction = satisfactionData.reduce((sum, value) => sum + value, 0);
+            const averageSatisfaction = totalSatisfaction / satisfactionData.length || 0;
+
+            document.getElementById('averageEarnings').textContent = `평균 순수익: ${averageRevenue.toFixed(2)} 원`;
+            document.getElementById('averageSatisfaction').textContent = `평균 만족도: ${averageSatisfaction.toFixed(2)}/10`;
+        }
+
+        function resetData() {
+            if (confirm('기록을 모두 삭제하시겠습니까?')) {
+                localStorage.clear();
+                dates = [];
+                revenueData = [];
+                satisfactionData = [];
+                causeCounts = {};
+                if (revenueChart) revenueChart.destroy();
+                if (satisfactionChart) satisfactionChart.destroy();
+                document.getElementById('totalEarnings').textContent = '';
+                document.getElementById('averageEarnings').textContent = '';
+                document.getElementById('averageSatisfaction').textContent = '';
+                document.getElementById('mainCause').textContent = '';
+                alert('모든 기록이 삭제되었습니다.');
+            }
+        }
+
+        function saveUserData() {
+            localStorage.setItem('dates', JSON.stringify(dates));
+            localStorage.setItem('revenueData', JSON.stringify(revenueData));
+            localStorage.setItem('satisfactionData', JSON.stringify(satisfactionData));
+            localStorage.setItem('causeCounts', JSON.stringify(causeCounts));
+        }
+
+        function loadUserData() {
+            const savedDates = JSON.parse(localStorage.getItem('dates')) || [];
+            const savedRevenueData = JSON.parse(localStorage.getItem('revenueData')) || [];
+            const savedSatisfactionData = JSON.parse(localStorage.getItem('satisfactionData')) || [];
+            const savedCauseCounts = JSON.parse(localStorage.getItem('causeCounts')) || {};
+
+            dates = savedDates;
+            revenueData = savedRevenueData;
+            satisfactionData = savedSatisfactionData;
+            causeCounts = savedCauseCounts;
+
+            if (dates.length > 0) {
+                updateCharts();
+                displayAverageMetrics();
+                displayMainCause();
+            }
+        }
+
+        document.getElementById('calculatorForm').addEventListener('submit', event => {
+            event.preventDefault();
+            calculateEarnings();
+        });
+
+        document.getElementById('resetButton').addEventListener('click', resetData);
+
+        loadUserData();
+    </script>
+</body>
+</html>
